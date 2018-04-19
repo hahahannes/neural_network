@@ -1,4 +1,6 @@
-# One Neuron per layer 
+# Multiple Neuron per layer
+# Dynamic amount of layers and dynamic amount of neurons per layer
+# Using chain rule 
 
 import random 
 import numpy 
@@ -31,10 +33,20 @@ class HiddenNeuron(Neuron):
         return value
 
 class OutputNeuron(Neuron):
-    # Softmax neuron to get propability if its belongs to specific label
     def __init__(self, reference_value):
         super().__init__()
         self.reference = reference_value
+    
+    def forward(self, weights, prev_neurons):
+        self.value = self.getWeightedSum(weights, prev_neurons) + self.bias
+        self.activate()
+    
+    def getWeightedSum(self,weights,prev_neurons):
+        value = 0
+        for i,neuron in enumerate(prev_neurons):
+            if neuron.active:
+                value += weights[i] * neuron.value
+        return value
 
 class Layer():
     def __init__(self):
@@ -69,7 +81,7 @@ class OutputLayer(Layer):
             neuron.bias = neuron.bias + change_of_bias
 
             for l,weight in enumerate(self.weights[i]):
-                value_of_last_neuron = previous_layer.neurons[l]
+                value_of_last_neuron = previous_layer.neurons[l].value
                 cost_derivative_to_weight = value_of_last_neuron
                 change_of_weight = cost_derivative_to_weight * activation_derivative * cost_derivative
                 change_of_weight = 2 * change_of_weight
@@ -82,7 +94,7 @@ class HiddenLayer(Layer):
         for l in range(0,number_neurons):
             self.neurons.append(HiddenNeuron()) 
 
-    def backprop(self, previous_layer):
+    def backprop(self, previous_layer, value, desired_value):
         for i,neuron in enumerate(self.neurons):
             change_of_bias = 0
             changes_of_weights = []
@@ -97,7 +109,7 @@ class HiddenLayer(Layer):
                 change_of_weight = 0
 
                 for l,weight in enumerate(self.weights[i]):
-                    value_of_last_neuron = previous_layer.neurons[l]
+                    value_of_last_neuron = previous_layer.neurons[l].value
                     cost_derivative_to_weight = value_of_last_neuron
                     change_of_weight = change_of_weight + cost_derivative_to_weight * activation_derivative * cost_derivative
                     changes_of_weights.append(change_of_weight)
@@ -143,8 +155,8 @@ class NeuralNetwork():
                 neuron_cost = self.cost(neuron.value, desired_prob)
                 complete_cost += neuron_cost
                 self.output_layer.backprop(neuron.value,desired_prob,self.hidden_layer)
-                self.hidden_layer.backprop(self.input_layer)
-            print("Complete Cost: " + complete_cost)
+                self.hidden_layer.backprop(self.input_layer,neuron.value,desired_prob)
+            print("Complete Cost: " + str(complete_cost))
             print("Backpropagate to minimize Cost")
             
 
