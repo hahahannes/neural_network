@@ -181,6 +181,8 @@ class NeuralNetwork():
             
             self.output_layer.backprop(self.hidden_layer,desired_probs)
             self.hidden_layer.backprop(self.input_layer, self.output_layer)
+            if k == 20:
+                break
         #print(self.output_layer.weights)
 
 
